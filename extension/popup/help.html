@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recent Tab Toggle setup</title>
+    <link rel="stylesheet" href="help.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Recent Tab Toggle setup</h1>
+      <p>Run the installer from the project checkout, then reload this extension:</p>
+      <pre><code>./scripts/install.sh</code></pre>
+
+      <h2>Expected status</h2>
+      <p>The extension popup should show <strong>Connected</strong> and <strong>Control + ` is active</strong> while Brave Stable is focused.</p>
+
+      <h2>Helper not found</h2>
+      <ol>
+        <li>Run <code>./scripts/install.sh</code> again.</li>
+        <li>Open <code>brave://extensions</code>.</li>
+        <li>Reload Recent Tab Toggle.</li>
+        <li>Close and reopen Brave if the helper is still not found.</li>
+      </ol>
+
+      <h2>Shortcut conflict</h2>
+      <p>Another application has registered <code>Control + `</code>. Quit or reconfigure it, then refocus Brave.</p>
+
+      <h2>Fallback shortcut</h2>
+      <p>Open <code>brave://extensions/shortcuts</code> and assign any Chromium-supported key combination to “Toggle the two most recently active tabs.”</p>
+
+      <h2>Uninstall</h2>
+      <pre><code>./scripts/uninstall.sh</code></pre>
+      <p>Then remove the unpacked extension from <code>brave://extensions</code>.</p>
+    </main>
+  </body>
+</html>

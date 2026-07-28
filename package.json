@@ -1,0 +1,18 @@
+{
+  "name": "recent-tab-toggle",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:native": "swift build --package-path native",
+    "check:extension": "node scripts/validate-extension.mjs",
+    "test:extension": "node --test extension/test/*.test.js",
+    "test:native": "scripts/test-native.sh",
+    "test:install": "scripts/test-install.sh",
+    "test": "npm run check:extension && npm run test:extension && npm run test:native && npm run test:install"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

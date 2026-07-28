@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recent Tab Toggle</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="mark" aria-hidden="true">↶</div>
+        <div>
+          <h1>Recent Tab Toggle</h1>
+          <p id="summary" class="summary" data-tone="warning">Checking…</p>
+        </div>
+      </header>
+
+      <dl aria-label="Diagnostics">
+        <div><dt>Helper</dt><dd id="helper">Checking…</dd></div>
+        <div><dt>Shortcut</dt><dd id="hotkey">Checking…</dd></div>
+        <div><dt>Profile</dt><dd id="profile">Checking…</dd></div>
+      </dl>
+
+      <p id="detail" class="detail"></p>
+      <p id="result" class="result" role="status" aria-live="polite"></p>
+
+      <div class="actions">
+        <button id="test-toggle" type="button">Test toggle</button>
+        <button id="shortcuts" class="secondary" type="button">
+          Fallback shortcut
+        </button>
+      </div>
+
+      <a class="help" href="help.html" target="_blank">Install &amp; troubleshooting</a>
+      <p class="privacy">No page access, telemetry, or network activity.</p>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

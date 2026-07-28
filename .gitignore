@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Swift Package Manager
+native/.build/
+native/.swiftpm/
+
+# Build artifacts
+dist/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
