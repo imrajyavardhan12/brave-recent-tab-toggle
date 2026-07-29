@@ -5,8 +5,8 @@ const NATIVE_HOST = "org.recenttabtoggle.host";
 export function startBackground(browser) {
   let status = { helper: "connecting", hotkey: "unknown" };
   let toggleQueue = Promise.resolve();
-  const enqueueToggle = () => {
-    const toggle = () => toggleRecentTab(browser);
+  const enqueueToggle = (options) => {
+    const toggle = () => toggleRecentTab(browser, options);
     const result = toggleQueue.then(toggle, toggle);
     toggleQueue = result.catch(() => undefined);
     return result;
@@ -36,12 +36,17 @@ export function startBackground(browser) {
         .getLastFocused({ windowTypes: ["normal"] })
         .then((window) => ({
           ...status,
-          profile: window.focused ? "focused" : "unfocused",
+          profile:
+            message.source === "action-popup" || window.focused
+              ? "focused"
+              : "unfocused",
         }))
         .catch(() => ({ ...status, profile: "unavailable" }));
     }
     if (message.type === "test-toggle") {
-      return enqueueToggle();
+      return enqueueToggle({
+        requireFocusedWindow: message.source !== "action-popup",
+      });
     }
   });
 

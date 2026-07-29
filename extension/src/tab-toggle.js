@@ -1,8 +1,11 @@
-export async function toggleRecentTab(browser) {
+export async function toggleRecentTab(
+  browser,
+  { requireFocusedWindow = true } = {},
+) {
   const window = await browser.windows.getLastFocused({
     windowTypes: ["normal"],
   });
-  if (!window.focused) {
+  if (requireFocusedWindow && !window.focused) {
     return { status: "ignored", reason: "window-not-focused" };
   }
 

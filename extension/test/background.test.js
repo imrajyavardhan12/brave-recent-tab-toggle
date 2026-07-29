@@ -101,6 +101,28 @@ test("diagnostics report when the native helper disconnects", async () => {
   });
 });
 
+test("the popup remains associated with its browser window after taking focus", async () => {
+  const browser = browserWithTwoTabs();
+  browser.windows.getLastFocused = async () => ({
+    id: 1,
+    focused: false,
+    type: "normal",
+  });
+  startBackground(browser);
+
+  const [status] = await browser.events.onMessage.dispatch({
+    type: "get-status",
+    source: "action-popup",
+  });
+  await browser.events.onMessage.dispatch({
+    type: "test-toggle",
+    source: "action-popup",
+  });
+
+  assert.equal(status.profile, "focused");
+  assert.deepEqual(browser.activatedTabIds, [20]);
+});
+
 test("the diagnostics test action performs a tab toggle", async () => {
   const browser = browserWithTwoTabs();
   startBackground(browser);

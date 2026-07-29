@@ -36,7 +36,7 @@ Then:
 4. Choose this repository’s `extension/` directory.
 5. Open at least two tabs and press **Control + `**.
 
-The extension ID is pinned to `edcgmlcjhdpdanpfhgcnbkeppbaijbmd`, allowing Brave to authorize its native helper consistently.
+The extension ID is pinned to `edcgmlcjhdpdanpfhgcnbkeppbaijbmd`, allowing Brave to authorize its native helper consistently. The installer writes the user-scoped host manifest to both Brave’s product directory and the Chromium compatibility directory currently scanned by Brave on macOS.
 
 ## Diagnostics
 

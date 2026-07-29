@@ -4,6 +4,11 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+### Fixed
+
+- Register the native host in the compatibility directory scanned by current Brave macOS builds.
+- Treat the action popup as belonging to its browser window when it temporarily owns focus.
+
 ### Added
 
 - Manifest V3 tab-toggle extension using Chromium activation metadata.

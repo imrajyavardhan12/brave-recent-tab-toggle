@@ -4,9 +4,11 @@ set -euo pipefail
 PROJECT_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 INSTALL_ROOT=${RTT_INSTALL_ROOT:-"$HOME/Library/Application Support/RecentTabToggle"}
 BRAVE_USER_DATA_DIR=${RTT_BRAVE_USER_DATA_DIR:-"$HOME/Library/Application Support/BraveSoftware/Brave-Browser"}
+CHROMIUM_NATIVE_HOST_DIR=${RTT_CHROMIUM_NATIVE_HOST_DIR:-"$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts"}
 HOST_DESTINATION="$INSTALL_ROOT/bin/recent-tab-toggle-host"
 MANIFEST_DIRECTORY="$BRAVE_USER_DATA_DIR/NativeMessagingHosts"
 MANIFEST_PATH="$MANIFEST_DIRECTORY/org.recenttabtoggle.host.json"
+COMPAT_MANIFEST_PATH="$CHROMIUM_NATIVE_HOST_DIR/org.recenttabtoggle.host.json"
 EXTENSION_ID=edcgmlcjhdpdanpfhgcnbkeppbaijbmd
 
 if [[ $(uname -s) != Darwin ]]; then
@@ -37,15 +39,23 @@ if [[ ! -x "$HOST_BINARY" ]]; then
   exit 1
 fi
 
-mkdir -p "$(dirname "$HOST_DESTINATION")" "$MANIFEST_DIRECTORY"
+mkdir -p \
+  "$(dirname "$HOST_DESTINATION")" \
+  "$MANIFEST_DIRECTORY" \
+  "$CHROMIUM_NATIVE_HOST_DIR"
 install -m 755 "$HOST_BINARY" "$HOST_DESTINATION"
 
-python3 - "$MANIFEST_PATH" "$HOST_DESTINATION" "$EXTENSION_ID" <<'PY'
+python3 - \
+  "$MANIFEST_PATH" \
+  "$COMPAT_MANIFEST_PATH" \
+  "$HOST_DESTINATION" \
+  "$EXTENSION_ID" <<'PY'
 import json
 import os
 import sys
 
-manifest_path, host_path, extension_id = sys.argv[1:]
+manifest_paths = sys.argv[1:3]
+host_path, extension_id = sys.argv[3:]
 manifest = {
     "name": "org.recenttabtoggle.host",
     "description": "Recent Tab Toggle native macOS shortcut helper",
@@ -53,10 +63,11 @@ manifest = {
     "type": "stdio",
     "allowed_origins": [f"chrome-extension://{extension_id}/"],
 }
-with open(manifest_path, "w") as file:
-    json.dump(manifest, file, indent=2)
-    file.write("\n")
-os.chmod(manifest_path, 0o644)
+for manifest_path in manifest_paths:
+    with open(manifest_path, "w") as file:
+        json.dump(manifest, file, indent=2)
+        file.write("\n")
+    os.chmod(manifest_path, 0o644)
 PY
 
 cat <<EOF

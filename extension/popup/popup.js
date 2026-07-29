@@ -12,7 +12,10 @@ const elements = {
 };
 
 async function refresh() {
-  const status = await chrome.runtime.sendMessage({ type: "get-status" });
+  const status = await chrome.runtime.sendMessage({
+    type: "get-status",
+    source: "action-popup",
+  });
   const view = presentDiagnostics(status);
   elements.summary.textContent = view.summary;
   elements.summary.dataset.tone = view.tone;
@@ -26,7 +29,10 @@ elements.testToggle.addEventListener("click", async () => {
   elements.testToggle.disabled = true;
   elements.result.textContent = "Testing…";
   try {
-    const result = await chrome.runtime.sendMessage({ type: "test-toggle" });
+    const result = await chrome.runtime.sendMessage({
+      type: "test-toggle",
+      source: "action-popup",
+    });
     elements.result.textContent =
       result.status === "toggled" ? "Toggle succeeded." : "No previous tab available.";
   } catch {

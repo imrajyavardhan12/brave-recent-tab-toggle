@@ -43,6 +43,10 @@ Only the elected host registers the physical Control–grave hotkey. It holds le
 
 All profile hosts receive a shortcut event. The extension instance whose normal browser window is actually focused performs the toggle; all others ignore it. This makes one-event-per-profile fan-out safe at the profile boundary.
 
+## Native host discovery
+
+The source installer writes identical, extension-ID-restricted manifests to Brave’s user data directory and the Google Chrome compatibility directory. Current Brave macOS builds resolve native hosts through the latter on affected installations; dual registration preserves compatibility without granting unrelated extensions access because `allowed_origins` contains only Recent Tab Toggle’s pinned ID.
+
 ## Native messaging protocol
 
 Native messages use Chromium’s standard format: a four-byte little-endian payload length followed by UTF-8 JSON.
