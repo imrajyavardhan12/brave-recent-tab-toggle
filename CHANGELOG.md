@@ -4,6 +4,8 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-29
+
 ### Fixed
 
 - Use Chromium’s callback messaging contract across the declared Chromium 121+ range.
