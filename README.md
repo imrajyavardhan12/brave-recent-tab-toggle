@@ -72,14 +72,16 @@ See [SECURITY.md](SECURITY.md) and [docs/architecture.md](docs/architecture.md).
 ## Development
 
 ```sh
-make test       # extension, native, multi-profile, and installer tests
+make lint       # formatting, workflow, shell, Python, and manifest gates
+make test       # extension, native, multi-profile, installer, doctor, packaging
 make build      # release-mode native helper
 make install    # local source installation
-make package    # create extension zip under dist/
+make doctor     # verify the complete local installation
+make package    # deterministic extension zip and SHA-256 checksum
 make uninstall
 ```
 
-The project uses dependency-free JavaScript tests and a dependency-free Swift package. Architectural decisions live in [`docs/adr/`](docs/adr/); GUI release checks are listed in [`docs/manual-test-plan.md`](docs/manual-test-plan.md).
+The project uses dependency-free JavaScript tests and a dependency-free Swift package. Architectural decisions live in [`docs/adr/`](docs/adr/); GUI release checks are listed in [`docs/manual-test-plan.md`](docs/manual-test-plan.md), and release procedure in [`docs/releasing.md`](docs/releasing.md).
 
 ## Uninstall
 

@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release-extension:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+      - name: Verify tag matches project version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          VERSION=$(node -p 'require("./package.json").version')
+          test "$RELEASE_TAG" = "v$VERSION"
+      - name: Install quality tools
+        run: brew list actionlint ruff shellcheck >/dev/null 2>&1 || brew install actionlint ruff shellcheck
+      - name: Test and package
+        run: make lint && make test
+      - name: Publish extension archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist/*.zip \
+            dist/*.sha256 \
+            --generate-notes \
+            --title "Recent Tab Toggle $GITHUB_REF_NAME"

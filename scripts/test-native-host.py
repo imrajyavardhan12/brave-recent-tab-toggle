@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
 import json
+import os
 import select
+import shutil
 import struct
 import subprocess
 import sys
-import os
-import shutil
 import tempfile
 import uuid
 
 host = sys.argv[1]
 sandbox = tempfile.mkdtemp(prefix="recent-tab-toggle-host-test.")
 environment = os.environ.copy()
-environment.update({
-    "RTT_COORDINATION_ROOT": sandbox,
-    "RTT_EVENT_NAMESPACE": f"org.recenttabtoggle.tests.{uuid.uuid4()}",
-    "RTT_TARGET_BUNDLE_ID": "org.recenttabtoggle.tests.never-frontmost",
-})
+environment.update(
+    {
+        "RTT_COORDINATION_ROOT": sandbox,
+        "RTT_EVENT_NAMESPACE": f"org.recenttabtoggle.tests.{uuid.uuid4()}",
+        "RTT_TARGET_BUNDLE_ID": "org.recenttabtoggle.tests.never-frontmost",
+    }
+)
 process = subprocess.Popen(
     [host],
     stdin=subprocess.PIPE,

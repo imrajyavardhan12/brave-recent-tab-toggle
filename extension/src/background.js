@@ -1,9 +1,7 @@
+import { NativeHostConnection } from "./native-host-connection.js";
 import { toggleRecentTab } from "./tab-toggle.js";
 
-const NATIVE_HOST = "org.recenttabtoggle.host";
-
 export function startBackground(browser) {
-  let status = { helper: "connecting", hotkey: "unknown" };
   let toggleQueue = Promise.resolve();
   const enqueueToggle = (options) => {
     const toggle = () => toggleRecentTab(browser, options);
@@ -12,47 +10,65 @@ export function startBackground(browser) {
     return result;
   };
 
-  const nativePort = browser.runtime.connectNative(NATIVE_HOST);
-  nativePort.onMessage.addListener((message) => {
-    if (message.type === "toggle") {
-      return enqueueToggle();
-    }
-    if (message.type === "status") {
-      status = { helper: message.helper, hotkey: message.hotkey };
-    }
-  });
+  const observeToggle = (result) => {
+    result.catch((error) => {
+      console.error("Recent Tab Toggle failed", error);
+    });
+    return result;
+  };
 
-  nativePort.onDisconnect.addListener(() => {
-    status = {
-      helper: "disconnected",
-      hotkey: "inactive",
-      error: browser.runtime.lastError?.message ?? "native helper disconnected",
-    };
+  const nativeConnection = new NativeHostConnection(browser, {
+    onMessage(message) {
+      if (message.type === "toggle") return observeToggle(enqueueToggle());
+    },
   });
+  nativeConnection.start();
 
-  browser.runtime.onMessage.addListener((message) => {
+  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    let response;
     if (message.type === "get-status") {
-      return browser.windows
-        .getLastFocused({ windowTypes: ["normal"] })
-        .then((window) => ({
+      const currentStatus = nativeConnection.getStatus();
+      const nativeStatus =
+        message.source === "action-popup" &&
+        (currentStatus.helper !== "connected" ||
+          currentStatus.hotkey === "unknown")
+          ? nativeConnection.retryNow()
+          : Promise.resolve(currentStatus);
+      response = Promise.all([
+        nativeStatus,
+        browser.windows.getLastFocused({ windowTypes: ["normal"] }),
+      ])
+        .then(([status, window]) => ({
           ...status,
           profile:
             message.source === "action-popup" || window.focused
               ? "focused"
               : "unfocused",
         }))
-        .catch(() => ({ ...status, profile: "unavailable" }));
-    }
-    if (message.type === "test-toggle") {
-      return enqueueToggle({
+        .catch(() => ({
+          ...nativeConnection.getStatus(),
+          profile: "unavailable",
+        }));
+    } else if (message.type === "test-toggle") {
+      response = enqueueToggle({
         requireFocusedWindow: message.source !== "action-popup",
       });
+    } else {
+      return false;
     }
+
+    Promise.resolve(response).then(sendResponse, (error) => {
+      sendResponse({
+        status: "error",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+    return true;
   });
 
   browser.commands.onCommand.addListener((command) => {
     if (command === "toggle-recent-tab") {
-      return enqueueToggle();
+      return observeToggle(enqueueToggle());
     }
   });
 }

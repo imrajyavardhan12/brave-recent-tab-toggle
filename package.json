@@ -1,6 +1,6 @@
 {
   "name": "recent-tab-toggle",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,8 +8,11 @@
     "check:extension": "node scripts/validate-extension.mjs",
     "test:extension": "node --test extension/test/*.test.js",
     "test:native": "scripts/test-native.sh",
+    "test:architectures": "scripts/test-architectures.sh",
     "test:install": "scripts/test-install.sh",
-    "test": "npm run check:extension && npm run test:extension && npm run test:native && npm run test:install"
+    "test:doctor": "scripts/test-doctor.sh",
+    "test:package": "scripts/test-package.sh",
+    "test": "npm run check:extension && npm run test:extension && npm run test:native && npm run test:architectures && npm run test:install && npm run test:doctor && npm run test:package"
   },
   "engines": {
     "node": ">=20"

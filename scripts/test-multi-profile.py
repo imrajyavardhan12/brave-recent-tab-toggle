@@ -13,11 +13,13 @@ import uuid
 host_path, broadcaster_path = sys.argv[1:]
 sandbox = tempfile.mkdtemp(prefix="recent-tab-toggle-profiles-test.")
 environment = os.environ.copy()
-environment.update({
-    "RTT_COORDINATION_ROOT": sandbox,
-    "RTT_EVENT_NAMESPACE": f"org.recenttabtoggle.tests.{uuid.uuid4()}",
-    "RTT_TARGET_BUNDLE_ID": "org.recenttabtoggle.tests.never-frontmost",
-})
+environment.update(
+    {
+        "RTT_COORDINATION_ROOT": sandbox,
+        "RTT_EVENT_NAMESPACE": f"org.recenttabtoggle.tests.{uuid.uuid4()}",
+        "RTT_TARGET_BUNDLE_ID": "org.recenttabtoggle.tests.never-frontmost",
+    }
+)
 hosts = [
     subprocess.Popen(
         [host_path],

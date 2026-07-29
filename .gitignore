@@ -7,6 +7,8 @@ native/.swiftpm/
 
 # Build artifacts
 dist/
+__pycache__/
+*.pyc
 
 # Editor files
 .vscode/

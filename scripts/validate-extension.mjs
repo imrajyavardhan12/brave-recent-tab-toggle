@@ -8,8 +8,10 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const extension = resolve(root, "extension");
 const manifest = JSON.parse(readFileSync(resolve(extension, "manifest.json")));
+const packageMetadata = JSON.parse(readFileSync(resolve(root, "package.json")));
 
 assert.equal(manifest.manifest_version, 3);
+assert.equal(manifest.version, packageMetadata.version);
 assert.equal(manifest.minimum_chrome_version, "121");
 assert.deepEqual(manifest.permissions, ["nativeMessaging"]);
 assert.equal(manifest.host_permissions, undefined);
@@ -34,6 +36,7 @@ for (const path of requiredFiles) {
 
 for (const path of [
   "src/background.js",
+  "src/native-host-connection.js",
   "src/service-worker.js",
   "src/tab-toggle.js",
   "popup/popup.js",

@@ -1,4 +1,4 @@
-.PHONY: build check install package test uninstall
+.PHONY: build check doctor install lint package test uninstall
 
 build:
 	swift build --package-path native --configuration release --product recent-tab-toggle-host
@@ -8,6 +8,12 @@ check:
 
 test:
 	npm test
+
+doctor:
+	./scripts/doctor.sh
+
+lint:
+	./scripts/lint.sh
 
 install:
 	./scripts/install.sh

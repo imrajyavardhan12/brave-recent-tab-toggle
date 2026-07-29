@@ -7,7 +7,8 @@ Run `make test` before these checks. Use a disposable Brave profile when practic
 1. Run `./scripts/install.sh` without administrator privileges.
 2. Load `extension/` from `brave://extensions`.
 3. Confirm the extension ID is `edcgmlcjhdpdanpfhgcnbkeppbaijbmd`.
-4. Open the popup and confirm helper **Connected**, shortcut **active**, and profile **focused**.
+4. Run `./scripts/doctor.sh` and confirm every check passes.
+5. Open the popup and confirm helper **Connected**, shortcut **active**, and profile **focused**.
 
 ## Core toggle
 
@@ -32,7 +33,7 @@ Run `make test` before these checks. Use a disposable Brave profile when practic
 
 ## Diagnostics and fallback
 
-- Remove the native manifest, reload the extension, and confirm the popup reports helper disconnection.
+- Remove the compatibility native manifest, confirm disconnection, restore it, then reopen the popup and confirm reconnection without reloading the extension.
 - Assign a supported key at `brave://extensions/shortcuts` and confirm it still toggles without the helper.
 - Use **Test toggle** and confirm success/no-previous-tab feedback.
 

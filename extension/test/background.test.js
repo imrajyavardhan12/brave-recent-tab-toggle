@@ -6,11 +6,24 @@ import { startBackground } from "../src/background.js";
 function event() {
   const listeners = [];
   return {
+    listeners,
     addListener(listener) {
       listeners.push(listener);
     },
     dispatch(...args) {
-      return Promise.all(listeners.map((listener) => listener(...args)));
+      return Promise.all(
+        listeners.map(
+          (listener) =>
+            new Promise((resolve, reject) => {
+              try {
+                const result = listener(...args, {}, resolve);
+                if (result !== true) Promise.resolve(result).then(resolve, reject);
+              } catch (error) {
+                reject(error);
+              }
+            }),
+        ),
+      );
     },
   };
 }
@@ -58,6 +71,59 @@ function browserWithTwoTabs() {
     events: { onCommand, onMessage, onNativeMessage, onNativeDisconnect },
   };
 }
+
+test("opening diagnostics reconnects a disconnected native helper", async () => {
+  const browser = browserWithTwoTabs();
+  const ports = [];
+  browser.runtime.connectNative = () => {
+    const port = { onMessage: event(), onDisconnect: event() };
+    ports.push(port);
+    return port;
+  };
+  startBackground(browser);
+  browser.runtime.lastError = { message: "native host not found" };
+  await ports[0].onDisconnect.dispatch();
+
+  const responsePromise = browser.events.onMessage.dispatch({
+    type: "get-status",
+    source: "action-popup",
+  });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(ports.length, 2);
+  await ports[1].onMessage.dispatch({
+    type: "status",
+    helper: "connected",
+    hotkey: "active",
+  });
+
+  const [status] = await responsePromise;
+  assert.equal(status.helper, "connected");
+  assert.equal(status.hotkey, "active");
+});
+
+test("runtime messages use Chromium's callback response contract", async () => {
+  const browser = browserWithTwoTabs();
+  startBackground(browser);
+  await browser.events.onNativeMessage.dispatch({
+    type: "status",
+    helper: "connected",
+    hotkey: "active",
+  });
+  const listener = browser.events.onMessage.listeners[0];
+  let response;
+
+  const keepChannelOpen = listener(
+    { type: "get-status", source: "action-popup" },
+    {},
+    (value) => {
+      response = value;
+    },
+  );
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  assert.equal(keepChannelOpen, true);
+  assert.equal(response.profile, "focused");
+});
 
 test("a native hotkey message performs a tab toggle", async () => {
   const browser = browserWithTwoTabs();
@@ -109,6 +175,11 @@ test("the popup remains associated with its browser window after taking focus", 
     type: "normal",
   });
   startBackground(browser);
+  await browser.events.onNativeMessage.dispatch({
+    type: "status",
+    helper: "connected",
+    hotkey: "active",
+  });
 
   const [status] = await browser.events.onMessage.dispatch({
     type: "get-status",

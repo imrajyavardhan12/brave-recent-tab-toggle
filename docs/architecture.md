@@ -1,6 +1,6 @@
 # Architecture
 
-## Components
+## System flow
 
 ```text
 Control + `
@@ -30,6 +30,8 @@ The Manifest V3 extension owns browser semantics. On a native `toggle` message, 
 
 Chromium updates `lastAccessed` on activation, so invoking the operation again naturally selects the former active tab. Toggle requests are serialized to avoid key-repeat races.
 
+The Browser Runtime module owns Chromium event semantics and native-host lifecycle. It uses callback responses supported by every declared Chromium version, retries failed native connections with bounded exponential backoff, and retries immediately when the diagnostics popup is opened.
+
 ### Native host
 
 Brave starts one Swift native-messaging host per extension profile. Each host:
@@ -46,6 +48,8 @@ All profile hosts receive a shortcut event. The extension instance whose normal 
 ## Native host discovery
 
 The source installer writes identical, extension-ID-restricted manifests to Brave’s user data directory and the Google Chrome compatibility directory. Current Brave macOS builds resolve native hosts through the latter on affected installations; dual registration preserves compatibility without granting unrelated extensions access because `allowed_origins` contains only Recent Tab Toggle’s pinned ID.
+
+The Installation module owns all user-scoped paths, atomic binary/manifest replacement, removal, and diagnostics. `scripts/doctor.sh` validates extension identity, permissions, Brave compatibility, binary architecture, both manifests, and the live native-messaging protocol.
 
 ## Native messaging protocol
 
@@ -67,13 +71,13 @@ Host to extension messages:
 - Profile focus is verified through the browser API, not inferred by the helper.
 - The helper registers one declared hotkey and does not inspect keyboard input.
 - Standard output is reserved exclusively for native protocol frames; diagnostics go to standard error.
-- No component uses the network or stores browsing data.
+- No module uses the network or stores browsing data.
 
 ## Failure behavior
 
 | Failure | Behavior |
 |---|---|
-| Helper absent or exits | Popup reports disconnection; fallback extension command remains available |
+| Helper absent or exits | Browser Runtime retries with bounded backoff; popup can force immediate retry |
 | Shortcut registration fails | Popup reports a conflict; no interception or override is attempted |
 | Previous tab closes | Next most recently active existing tab becomes eligible |
 | No focused normal window | Toggle is ignored |

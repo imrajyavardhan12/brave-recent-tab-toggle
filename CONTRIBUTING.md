@@ -4,9 +4,11 @@ Contributions are welcome. Keep the project focused on immediate two-tab togglin
 
 ## Setup
 
-Requirements are macOS 13+, Node.js 20+, Swift 6+, and Brave Stable.
+Requirements are macOS 13+, Node.js 20+, Swift 6+, Brave Stable, ShellCheck, Ruff, and actionlint.
 
 ```sh
+brew install shellcheck ruff actionlint
+make lint
 make test
 make install
 ```
@@ -29,4 +31,4 @@ A pull request should include:
 3. Privacy, permission, and multi-profile impact.
 4. Documentation updates where applicable.
 
-Run `make test` before submission. Native UI/hotkey changes should also be exercised manually on Brave Stable.
+Run `make lint && make test` before submission. Native UI/hotkey changes should also be exercised manually on Brave Stable.
