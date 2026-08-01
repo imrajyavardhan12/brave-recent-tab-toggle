@@ -30,7 +30,7 @@ The Manifest V3 extension owns browser semantics. On a native `toggle` message, 
 
 Chromium updates `lastAccessed` on activation, so invoking the operation again naturally selects the former active tab. Toggle requests are serialized to avoid key-repeat races.
 
-The Browser Runtime module owns Chromium event semantics and native-host lifecycle. It uses callback responses supported by every declared Chromium version, retries failed native connections with bounded exponential backoff, and retries immediately when the diagnostics popup is opened.
+The Browser Runtime module owns Chromium event semantics and native-host lifecycle. It synchronously registers a browser-startup wake event so Brave starts the service worker and native connection before the first shortcut press. It uses callback responses supported by every declared Chromium version, retries failed native connections with bounded exponential backoff, and retries immediately when the diagnostics popup is opened.
 
 ### Native host
 

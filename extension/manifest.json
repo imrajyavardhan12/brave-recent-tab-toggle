@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Recent Tab Toggle",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Toggle between the two most recently active tabs in Brave.",
   "minimum_chrome_version": "121",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvpEFDhL6n7Nzg4Or8wXeeSWWse1kPIDwdA/C0KYP4kUvNT51Fxd8yE/Fw+WAFdmvdw6HBJiau9zbUmDays/hKcx0X5o7jy3/MqRu/5pc9jX8TSne1E29BFlY3yzHJ6gL6+5w4r1hqB8/JGqsWovsKSsU+Tan4S1uLkp+KNXYVJ7KidCBtmAZbptB1CZ94uDstCCEc10Dd+pUaKmo0x+lx2J3HOCLwUb95PcvSlEHPpvR66PQkMFTjSzIbAgeXhEGVo0SPEKNT0GioQUGrVcvDsxRVX+vUd5/nVf6jkDNKPa8pfCp72OyFgk6s0fjMVOBrToe8pOrzE8U1vkPXuAFawIDAQAB",

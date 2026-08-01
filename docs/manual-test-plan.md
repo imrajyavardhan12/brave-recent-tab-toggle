@@ -19,6 +19,7 @@ Run `make test` before these checks. Use a disposable Brave profile when practic
 
 ## Lifecycle cases
 
+- Quit and reopen Brave; without opening the extension popup, confirm the first Control–grave press toggles immediately.
 - Close B after A → B → C; from C, confirm the toggle activates A.
 - With one tab, confirm the shortcut is a silent no-op.
 - Confirm pinned, grouped, collapsed-group, and discarded tabs remain eligible.

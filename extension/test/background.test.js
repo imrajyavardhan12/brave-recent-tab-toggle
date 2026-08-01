@@ -31,6 +31,7 @@ function event() {
 function browserWithTwoTabs() {
   const onCommand = event();
   const onMessage = event();
+  const onStartup = event();
   const onNativeMessage = event();
   const onNativeDisconnect = event();
   const activatedTabIds = [];
@@ -45,6 +46,7 @@ function browserWithTwoTabs() {
     commands: { onCommand },
     runtime: {
       onMessage,
+      onStartup,
       lastError: { message: "native host not found" },
       connectNative() {
         return {
@@ -68,9 +70,32 @@ function browserWithTwoTabs() {
         activatedTabIds.push(tabId);
       },
     },
-    events: { onCommand, onMessage, onNativeMessage, onNativeDisconnect },
+    events: {
+      onCommand,
+      onMessage,
+      onStartup,
+      onNativeMessage,
+      onNativeDisconnect,
+    },
   };
 }
+
+test("browser startup is registered as a native-helper wake event", async () => {
+  const browser = browserWithTwoTabs();
+  const ports = [];
+  browser.runtime.connectNative = () => {
+    const port = { onMessage: event(), onDisconnect: event() };
+    ports.push(port);
+    return port;
+  };
+  startBackground(browser);
+  browser.runtime.lastError = { message: "native helper disconnected" };
+  await ports[0].onDisconnect.dispatch();
+
+  await browser.events.onStartup.dispatch();
+
+  assert.equal(ports.length, 2);
+});
 
 test("opening diagnostics reconnects a disconnected native helper", async () => {
   const browser = browserWithTwoTabs();

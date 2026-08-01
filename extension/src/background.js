@@ -22,6 +22,7 @@ export function startBackground(browser) {
       if (message.type === "toggle") return observeToggle(enqueueToggle());
     },
   });
+  browser.runtime.onStartup.addListener(() => nativeConnection.start());
   nativeConnection.start();
 
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
