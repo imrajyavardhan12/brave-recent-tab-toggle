@@ -4,6 +4,10 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+### Fixed
+
+- Wake the extension at browser startup so the exact shortcut works before the diagnostics popup is opened.
+
 ## [0.2.0] - 2026-07-29
 
 ### Fixed

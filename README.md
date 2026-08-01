@@ -30,6 +30,7 @@ If you use A, then B, then C, the first toggle opens B and the next toggle retur
 ## Highlights
 
 - Uses the exact <kbd>Control</kbd> + <kbd>`</kbd> shortcut.
+- Works on the first key press after Brave starts—no popup click required.
 - Switches immediately between the **Active Tab** and **Previous Tab**.
 - Keeps separate tab history for every Brave window.
 - Works safely with multiple Brave profiles.
