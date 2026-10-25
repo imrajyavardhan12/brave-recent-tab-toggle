@@ -4,6 +4,8 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-10-25
+
 ### Fixed
 
 - Keep a single hotkey leader when cleanup tools or an uninstall remove the coordination lock file while Brave is running.
