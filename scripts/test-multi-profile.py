@@ -47,16 +47,44 @@ def read_message(host, timeout):
     return json.loads(payload)
 
 
-try:
-    for host in hosts:
-        first = read_message(host, 5)
-        assert first and first["type"] == "status"
+def drain(host):
+    messages = []
+    while (message := read_message(host, 0)) is not None:
+        messages.append(message)
+    return messages
 
-    # Let leader election and status-request fan-out settle, then drain statuses.
+
+def collect_until(host, predicate, timeout=5):
+    messages = []
+    deadline = time.monotonic() + timeout
+    while (remaining := deadline - time.monotonic()) > 0:
+        message = read_message(host, remaining)
+        if message is None:
+            break
+        messages.append(message)
+        if predicate(message):
+            break
+    return messages
+
+
+try:
+    # Each host settles once it forwards the leader's hotkey state.
+    for host in hosts:
+        settled = collect_until(
+            host,
+            lambda message: (
+                message.get("type") == "status" and message.get("hotkey") != "unknown"
+            ),
+        )
+        assert settled and settled[-1].get("hotkey") != "unknown", settled
     time.sleep(0.3)
     for host in hosts:
-        while read_message(host, 0) is not None:
-            pass
+        drain(host)
+
+    # The leader repeats its state every five seconds; a repeat must not message the browser.
+    time.sleep(5.5)
+    idle_messages = [message for host in hosts for message in drain(host)]
+    assert idle_messages == [], f"idle hosts sent browser messages: {idle_messages}"
 
     subprocess.run(
         [broadcaster_path, "--broadcast-toggle"],
@@ -64,17 +92,16 @@ try:
         env=environment,
     )
 
-    for host in hosts:
-        deadline = time.monotonic() + 5
-        toggles = 0
-        while time.monotonic() < deadline:
-            message = read_message(host, deadline - time.monotonic())
-            if message is None:
-                break
-            if message.get("type") == "toggle":
-                toggles += 1
-                break
-        assert toggles == 1, "each browser profile must receive the toggle event"
+    received = [
+        collect_until(host, lambda message: message.get("type") == "toggle")
+        for host in hosts
+    ]
+    # Leave time for a duplicate toggle to arrive before counting.
+    time.sleep(0.5)
+    for host, messages in zip(hosts, received):
+        messages += drain(host)
+        toggles = sum(message.get("type") == "toggle" for message in messages)
+        assert toggles == 1, f"each browser profile must toggle once, not {toggles}"
 finally:
     for host in hosts:
         if host.poll() is None:

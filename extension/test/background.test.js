@@ -147,7 +147,7 @@ test("runtime messages use Chromium's callback response contract", async () => {
   await new Promise((resolve) => setTimeout(resolve, 0));
 
   assert.equal(keepChannelOpen, true);
-  assert.equal(response.profile, "focused");
+  assert.equal(response.hotkey, "active");
 });
 
 test("a native hotkey message performs a tab toggle", async () => {
@@ -173,7 +173,6 @@ test("diagnostics report native helper and hotkey status", async () => {
   assert.deepEqual(status, {
     helper: "connected",
     hotkey: "active",
-    profile: "focused",
   });
 });
 
@@ -187,12 +186,11 @@ test("diagnostics report when the native helper disconnects", async () => {
   assert.deepEqual(status, {
     helper: "disconnected",
     hotkey: "inactive",
-    profile: "focused",
     error: "native host not found",
   });
 });
 
-test("the popup remains associated with its browser window after taking focus", async () => {
+test("the popup test toggle acts on its browser window after taking focus", async () => {
   const browser = browserWithTwoTabs();
   browser.windows.getLastFocused = async () => ({
     id: 1,
@@ -200,22 +198,12 @@ test("the popup remains associated with its browser window after taking focus", 
     type: "normal",
   });
   startBackground(browser);
-  await browser.events.onNativeMessage.dispatch({
-    type: "status",
-    helper: "connected",
-    hotkey: "active",
-  });
 
-  const [status] = await browser.events.onMessage.dispatch({
-    type: "get-status",
-    source: "action-popup",
-  });
   await browser.events.onMessage.dispatch({
     type: "test-toggle",
     source: "action-popup",
   });
 
-  assert.equal(status.profile, "focused");
   assert.deepEqual(browser.activatedTabIds, [20]);
 });
 

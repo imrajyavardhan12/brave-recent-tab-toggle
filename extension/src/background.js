@@ -28,28 +28,10 @@ export function startBackground(browser) {
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     let response;
     if (message.type === "get-status") {
-      const currentStatus = nativeConnection.getStatus();
-      const nativeStatus =
-        message.source === "action-popup" &&
-        (currentStatus.helper !== "connected" ||
-          currentStatus.hotkey === "unknown")
+      response =
+        message.source === "action-popup"
           ? nativeConnection.retryNow()
-          : Promise.resolve(currentStatus);
-      response = Promise.all([
-        nativeStatus,
-        browser.windows.getLastFocused({ windowTypes: ["normal"] }),
-      ])
-        .then(([status, window]) => ({
-          ...status,
-          profile:
-            message.source === "action-popup" || window.focused
-              ? "focused"
-              : "unfocused",
-        }))
-        .catch(() => ({
-          ...nativeConnection.getStatus(),
-          profile: "unavailable",
-        }));
+          : nativeConnection.getStatus();
     } else if (message.type === "test-toggle") {
       response = enqueueToggle({
         requireFocusedWindow: message.source !== "action-popup",

@@ -116,6 +116,24 @@ class NativeHostLayout:
         except OSError:
             pass
 
+    def host_is_running(self):
+        # Brave launches the manifest's resolved path followed by the extension origin.
+        host = str(self.host.resolve())
+        try:
+            commands = subprocess.run(
+                ["/bin/ps", "-axww", "-o", "command="],
+                capture_output=True,
+                text=True,
+                errors="replace",
+                check=False,
+            ).stdout.splitlines()
+        except OSError:
+            # The warning is advisory; never let it block an uninstall.
+            return False
+        return any(
+            command == host or command.startswith(host + " ") for command in commands
+        )
+
 
 def _atomic_copy(source, destination, mode):
     descriptor, temporary_name = tempfile.mkstemp(
@@ -361,7 +379,15 @@ def main():
         print(layout.host)
         return 0
     if arguments.command == "uninstall":
+        running = layout.host_is_running()
         layout.uninstall()
+        if running:
+            print(
+                "Warning: a browser is still running the removed helper. Quit and "
+                "reopen Brave (or Chrome) to stop it.\nUntil then the shortcut keeps "
+                f"working and the helper recreates its lock file in {layout.cache_root}.\n",
+                file=sys.stderr,
+            )
         return 0
     return doctor(layout, Path(arguments.project_root).resolve())
 

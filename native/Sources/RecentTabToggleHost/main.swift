@@ -4,6 +4,8 @@ import Foundation
 import RecentTabToggleCore
 
 final class HostRuntime: @unchecked Sendable {
+  private static let heartbeatTicks = 5
+
   private let sink = NativeMessageSink()
   private let bus: DistributedEventBus
   private let election: ProcessLeaderElection
@@ -11,7 +13,9 @@ final class HostRuntime: @unchecked Sendable {
   private let controller: HotKeyActivationController
 
   private var isLeader = false
+  private var forwardedState: HotKeyState?
   private var lastState = HotKeyState.inactive
+  private var leadershipTicks = 0
   private var workspaceObserver: NSObjectProtocol?
   private var timer: Timer?
 
@@ -48,7 +52,10 @@ final class HostRuntime: @unchecked Sendable {
     bus.onToggle { [sink] in
       Self.sendOrTerminate(["type": "toggle"], to: sink)
     }
-    bus.onStatus { [sink] state in
+    bus.onStatus { [weak self, sink] state in
+      // The leader repeats its state as a heartbeat; forward only changes to the browser.
+      guard let self, state != self.forwardedState else { return }
+      self.forwardedState = state
       Self.sendOrTerminate(
         [
           "type": "status",
@@ -83,16 +90,22 @@ final class HostRuntime: @unchecked Sendable {
   }
 
   private func maintainLeadership() {
-    if !isLeader {
-      isLeader = election.tryAcquire()
-      if !isLeader {
-        bus.requestStatus()
-        return
-      }
-      refreshHotKey(forceBroadcast: true)
+    let wasLeader = isLeader
+    isLeader = election.tryAcquire()
+    if isLeader {
+      // A periodic repeat lets hosts that missed a notification converge.
+      leadershipTicks = wasLeader ? (leadershipTicks + 1) % Self.heartbeatTicks : 0
+      refreshHotKey(forceBroadcast: leadershipTicks == 0)
       return
     }
-    refreshHotKey(forceBroadcast: false)
+    if wasLeader {
+      // The lock file was replaced; the new leader announces the hotkey state.
+      controller.deactivate()
+    }
+    // Older leaders broadcast only changes, so ask until the first state arrives.
+    if forwardedState == nil {
+      bus.requestStatus()
+    }
   }
 
   private func refreshHotKey(forceBroadcast: Bool) {

@@ -27,10 +27,7 @@ public final class HotKeyActivationController {
   @discardableResult
   public func update(frontmostBundleID: String?) -> HotKeyState {
     guard frontmostBundleID == targetBundleID else {
-      if isRegistered {
-        registrar.unregister()
-        isRegistered = false
-      }
+      deactivate()
       return .inactive
     }
 
@@ -41,5 +38,11 @@ public final class HotKeyActivationController {
     let state = registrar.register()
     isRegistered = state == .active
     return state
+  }
+
+  public func deactivate() {
+    guard isRegistered else { return }
+    registrar.unregister()
+    isRegistered = false
   }
 }

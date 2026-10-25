@@ -8,7 +8,7 @@ Run `make test` before these checks. Use a disposable Brave profile when practic
 2. Load `extension/` from `brave://extensions`.
 3. Confirm the extension ID is `edcgmlcjhdpdanpfhgcnbkeppbaijbmd`.
 4. Run `./scripts/doctor.sh` and confirm every check passes.
-5. Open the popup and confirm helper **Connected**, shortcut **active**, and profile **focused**.
+5. Open the popup and confirm helper **Connected** and shortcut **active**.
 
 ## Core toggle
 

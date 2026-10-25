@@ -8,14 +8,12 @@ test("diagnostics clearly identify a working exact shortcut", () => {
     presentDiagnostics({
       helper: "connected",
       hotkey: "active",
-      profile: "focused",
     }),
     {
       summary: "Ready",
       tone: "success",
       helper: "Connected",
       hotkey: "Control + ` is active",
-      profile: "This profile owns the focused window",
       detail: "",
     },
   );
@@ -25,7 +23,6 @@ test("diagnostics expose native helper connection errors", () => {
   const view = presentDiagnostics({
     helper: "disconnected",
     hotkey: "inactive",
-    profile: "focused",
     error: "Specified native messaging host not found.",
   });
 
