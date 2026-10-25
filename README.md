@@ -149,8 +149,7 @@ It checks the extension identity and permissions, Brave compatibility, helper ar
 You can also select the extension icon in Brave. The diagnostics popup reports:
 
 - whether the native helper is connected;
-- whether the exact shortcut is active or conflicts with another app;
-- whether this profile owns the focused Brave window; and
+- whether the exact shortcut is active or conflicts with another app; and
 - whether a test toggle succeeds.
 
 ## What the installer changes
@@ -183,7 +182,8 @@ The second manifest is a compatibility registration required by affected Brave v
 | Tabs are pinned, grouped, collapsed, or discarded | They remain eligible normally. |
 | The key is pressed rapidly | Requests are serialized and processed in order. |
 | The helper disconnects | The extension retries with bounded backoff; opening diagnostics triggers an immediate retry. |
-| Another app owns the shortcut | Diagnostics reports a conflict; the project does not override it. |
+| Another app reserved the shortcut exclusively | Diagnostics reports a conflict; the project does not override it. |
+| Another app registers the shortcut non-exclusively | Diagnostics cannot detect it. Quit or reconfigure that app if Control–grave misbehaves in Brave. |
 
 On non-US keyboard layouts, the native shortcut follows the **physical ANSI grave-key position**.
 

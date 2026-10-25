@@ -41,12 +41,14 @@ public final class CarbonHotKeyRegistrar: HotKeyRegistering, @unchecked Sendable
       signature: Self.signature,
       id: Self.identifier
     )
+    // Without the exclusive option Carbon accepts a duplicate registration from another
+    // process, so a conflict could never be detected.
     let status = RegisterEventHotKey(
       UInt32(kVK_ANSI_Grave),
       UInt32(controlKey),
       identifier,
       GetApplicationEventTarget(),
-      0,
+      OptionBits(kEventHotKeyExclusive),
       &hotKey
     )
     if status == noErr { return .active }

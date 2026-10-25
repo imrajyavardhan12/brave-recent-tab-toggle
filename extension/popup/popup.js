@@ -4,7 +4,6 @@ const elements = {
   summary: document.querySelector("#summary"),
   helper: document.querySelector("#helper"),
   hotkey: document.querySelector("#hotkey"),
-  profile: document.querySelector("#profile"),
   detail: document.querySelector("#detail"),
   result: document.querySelector("#result"),
   testToggle: document.querySelector("#test-toggle"),
@@ -21,7 +20,6 @@ async function refresh() {
   elements.summary.dataset.tone = view.tone;
   elements.helper.textContent = view.helper;
   elements.hotkey.textContent = view.hotkey;
-  elements.profile.textContent = view.profile;
   elements.detail.textContent = view.detail;
 }
 

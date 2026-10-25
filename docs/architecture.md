@@ -41,7 +41,7 @@ Brave starts one Swift native-messaging host per extension profile. Each host:
 - Receives shortcut/status events through user-scoped distributed notifications.
 - Writes toggle events to its own extension profile.
 
-Only the elected host registers the physical Control–grave hotkey. It holds leadership while connected, but registers the hotkey only while Brave Stable is frontmost. Followers retry leadership after leader termination.
+Only the elected host registers the physical Control–grave hotkey. It holds leadership while connected, but registers the hotkey only while Brave Stable is frontmost. Followers retry leadership after leader termination. If the lock file under Caches is removed, its leader steps down and one host leads on the recreated file, so a cleanup never yields two leaders. The leader repeats its hotkey state every five seconds so a host that missed a notification converges, and each host forwards only state changes, so idle hosts send no browser messages.
 
 All profile hosts receive a shortcut event. The extension instance whose normal browser window is actually focused performs the toggle; all others ignore it. This makes one-event-per-profile fan-out safe at the profile boundary.
 
@@ -79,10 +79,12 @@ Host to extension messages:
 |---|---|
 | Helper absent or exits | Browser Runtime retries with bounded backoff; popup can force immediate retry |
 | Shortcut registration fails | Popup reports a conflict; no interception or override is attempted |
+| Another app registers the shortcut non-exclusively | Not detected; Carbon reports conflicts only between exclusive registrations |
 | Previous tab closes | Next most recently active existing tab becomes eligible |
 | No focused normal window | Toggle is ignored |
 | Wrong profile receives fan-out | Toggle is ignored by focused-window gating |
 | Leader host exits | A follower acquires the released lock and registers the shortcut |
+| Lock file removed while hosts run | The leader of the removed file steps down and one host leads on the recreated file |
 
 ## Repository layout
 

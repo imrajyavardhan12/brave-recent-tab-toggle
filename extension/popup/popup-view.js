@@ -11,17 +11,8 @@ const hotkeyLabels = {
   unknown: "Waiting for helper status",
 };
 
-const profileLabels = {
-  focused: "This profile owns the focused window",
-  unfocused: "Another profile owns the focused window",
-  unavailable: "No normal Brave window is focused",
-};
-
 export function presentDiagnostics(status) {
-  const ready =
-    status.helper === "connected" &&
-    status.hotkey === "active" &&
-    status.profile === "focused";
+  const ready = status.helper === "connected" && status.hotkey === "active";
   const conflict = status.hotkey === "conflict";
 
   return {
@@ -29,7 +20,6 @@ export function presentDiagnostics(status) {
     tone: ready ? "success" : conflict ? "danger" : "warning",
     helper: helperLabels[status.helper] ?? "Unknown",
     hotkey: hotkeyLabels[status.hotkey] ?? "Unknown",
-    profile: profileLabels[status.profile] ?? "Unknown",
     detail: status.error ?? "",
   };
 }

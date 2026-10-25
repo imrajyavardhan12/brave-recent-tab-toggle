@@ -4,6 +4,17 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+### Fixed
+
+- Keep a single hotkey leader when cleanup tools or an uninstall remove the coordination lock file while Brave is running.
+- Detect a Control–grave shortcut reserved by another application by registering it exclusively.
+- Warn during uninstallation when Brave is still running the removed helper.
+- Stop idle native hosts from sending a status message to every profile each second, while still correcting a missed status update within five seconds.
+
+### Removed
+
+- The popup's Profile row, which always reported the focused profile once the popup took focus.
+
 ## [0.2.1] - 2026-08-01
 
 ### Fixed
