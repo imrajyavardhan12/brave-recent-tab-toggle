@@ -24,7 +24,7 @@ jobs:
           VERSION=$(node -p 'require("./package.json").version')
           test "$RELEASE_TAG" = "v$VERSION"
       - name: Install quality tools
-        run: brew list actionlint ruff shellcheck >/dev/null 2>&1 || brew install actionlint ruff shellcheck
+        run: scripts/install-ci-tools.sh "$RUNNER_TEMP/quality-tools" >>"$GITHUB_PATH"
       - name: Test and package
         run: make lint && make test
       - name: Publish extension archive

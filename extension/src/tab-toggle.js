@@ -12,7 +12,7 @@ export async function toggleRecentTab(
   const tabs = await browser.tabs.query({ windowId: window.id });
   const previousTab = tabs
     .filter((tab) => !tab.active && tab.id !== undefined)
-    .sort((left, right) => right.lastAccessed - left.lastAccessed)[0];
+    .sort((left, right) => (right.lastAccessed ?? 0) - (left.lastAccessed ?? 0))[0];
 
   if (!previousTab) {
     return { status: "ignored", reason: "no-previous-tab" };
