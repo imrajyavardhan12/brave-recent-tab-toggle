@@ -79,6 +79,7 @@ Host to extension messages:
 |---|---|
 | Helper absent or exits | Browser Runtime retries with bounded backoff; popup can force immediate retry |
 | Shortcut registration fails | Popup reports a conflict; no interception or override is attempted |
+| Leadership changes hands | After taking over from a previous leader, the new leader holds a conflict for 2.5 seconds (reported on the next 1-second tick, about 3 seconds in) while the previous holder releases the shortcut, so the popup does not flash a false conflict. A first leader at startup has no previous holder and reports a conflict at once |
 | Another app registers the shortcut non-exclusively | Not detected; Carbon reports conflicts only between exclusive registrations |
 | Previous tab closes | Next most recently active existing tab becomes eligible |
 | No focused normal window | Toggle is ignored |
