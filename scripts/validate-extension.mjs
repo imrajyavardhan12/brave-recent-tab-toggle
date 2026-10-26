@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { manifestReferences } from "./manifest-references.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const extension = resolve(root, "extension");
@@ -24,14 +26,14 @@ const extensionID = [...digest]
   .join("");
 assert.equal(extensionID, "edcgmlcjhdpdanpfhgcnbkeppbaijbmd");
 
-const requiredFiles = [
-  manifest.background.service_worker,
-  manifest.action.default_popup,
-  ...Object.values(manifest.icons),
-  ...Object.values(manifest.action.default_icon),
-];
-for (const path of requiredFiles) {
-  assert.ok(existsSync(resolve(extension, path)), `missing extension file: ${path}`);
+// The product needs these entries; the reference list alone would accept their absence.
+assert.equal(typeof manifest.background?.service_worker, "string", "service worker is required");
+assert.equal(typeof manifest.action?.default_popup, "string", "diagnostics popup is required");
+assert.equal(typeof manifest.icons?.["128"], "string", "a 128px extension icon is required");
+assert.ok(manifest.action?.default_icon !== undefined, "a toolbar icon is required");
+for (const path of manifestReferences(manifest)) {
+  const file = resolve(extension, path);
+  assert.ok(existsSync(file) && statSync(file).isFile(), `missing extension file: ${path}`);
 }
 
 // Walk by hand: readdirSync's recursive option needs Node 20.1, and engines allows 20.0.
