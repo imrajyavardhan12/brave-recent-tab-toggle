@@ -7,6 +7,7 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 ### Fixed
 
 - Rank a tab that lacks Chromium activation metadata as least recently active instead of letting it disrupt Previous Tab selection.
+- Stop the diagnostics popup from briefly reporting a shortcut conflict when another profile's helper takes over the shortcut. Conflicts outside a takeover, including at startup, are still reported immediately.
 
 ### Changed
 

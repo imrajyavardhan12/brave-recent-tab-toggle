@@ -53,6 +53,142 @@ struct NativeTestRunner {
     }
     try shortcutEventsFanOutToConnectedHosts()
     print("✓ shortcut events fan out to connected hosts")
+    try aConflictDuringAHandoverIsHeld()
+    print("✓ a conflict during a handover is held")
+    try aConflictAfterTheHandoverIsReportedImmediately()
+    print("✓ a conflict after the handover is reported immediately")
+    try switchingApplicationsCannotHideAConflict()
+    print("✓ switching applications cannot hide a conflict")
+    try eachLeadershipTermHasItsOwnGrace()
+    print("✓ each leadership term has its own handover grace")
+    try theFirstLeaderReportsAConflictImmediately()
+    print("✓ the first leader reports a conflict immediately")
+    try aTakeoverHoldsAConflictAndAnswersNoRequests()
+    print("✓ a takeover holds a conflict and answers no status requests")
+    try onlyChangesAndHeartbeatsAreBroadcast()
+    print("✓ only state changes and heartbeats are broadcast")
+    try aHeartbeatDuringAHoldIsSentWhenItResolves()
+    print("✓ a heartbeat during a hold is sent when it resolves")
+    try steppingDownForgetsTheTerm()
+    print("✓ stepping down forgets the leadership term")
+  }
+
+  static func theFirstLeaderReportsAConflictImmediately() throws {
+    var reporter = LeaderStatusReporter(grace: 2.5)
+    reporter.beginTerm(at: 100, afterPreviousLeader: false)
+
+    try expect(
+      reporter.observe(.conflict, at: 100) == .conflict,
+      "no one held the shortcut before a cold start, so a conflict is real"
+    )
+    try expect(reporter.statusForRequest == .conflict, "requests get the reported state")
+  }
+
+  static func aTakeoverHoldsAConflictAndAnswersNoRequests() throws {
+    var reporter = LeaderStatusReporter(grace: 2.5)
+    reporter.beginTerm(at: 100, afterPreviousLeader: true)
+
+    try expect(reporter.observe(.conflict, at: 100) == nil, "a takeover conflict is held")
+    try expect(
+      reporter.statusForRequest == nil,
+      "a held conflict leaves no current state to answer requests with"
+    )
+    try expect(reporter.observe(.active, at: 101) == .active, "the settled state is broadcast")
+    try expect(reporter.statusForRequest == .active, "requests get the settled state")
+  }
+
+  static func onlyChangesAndHeartbeatsAreBroadcast() throws {
+    var reporter = LeaderStatusReporter(grace: 2.5)
+    reporter.beginTerm(at: 100, afterPreviousLeader: false)
+    _ = reporter.observe(.inactive, at: 100)
+
+    try expect(reporter.observe(.inactive, at: 101) == nil, "an unchanged state is not sent")
+    reporter.requestBroadcast()
+    try expect(reporter.observe(.inactive, at: 102) == .inactive, "a heartbeat repeats it")
+    try expect(reporter.observe(.active, at: 103) == .active, "a change is sent")
+  }
+
+  static func aHeartbeatDuringAHoldIsSentWhenItResolves() throws {
+    var reporter = LeaderStatusReporter(grace: 2.5)
+    reporter.beginTerm(at: 100, afterPreviousLeader: false)
+    _ = reporter.observe(.active, at: 100)
+    reporter.endTerm()
+    reporter.beginTerm(at: 200, afterPreviousLeader: true)
+    _ = reporter.observe(.conflict, at: 200)
+
+    reporter.requestBroadcast()
+    try expect(reporter.observe(.conflict, at: 201) == nil, "the heartbeat waits for the hold")
+    try expect(
+      reporter.observe(.active, at: 202) == .active,
+      "the deferred heartbeat is sent even though the state matches an earlier broadcast"
+    )
+  }
+
+  static func steppingDownForgetsTheTerm() throws {
+    var reporter = LeaderStatusReporter(grace: 2.5)
+    reporter.beginTerm(at: 100, afterPreviousLeader: false)
+    _ = reporter.observe(.active, at: 100)
+
+    reporter.endTerm()
+
+    try expect(reporter.statusForRequest == nil, "a follower answers no status requests")
+    reporter.beginTerm(at: 200, afterPreviousLeader: true)
+    try expect(
+      reporter.observe(.active, at: 200) == .active,
+      "a new term announces its state even if it matches the last term's"
+    )
+  }
+
+  static func aConflictDuringAHandoverIsHeld() throws {
+    var grace = HandoverGrace(duration: 2.5)
+    grace.beginTerm(at: 100)
+
+    try expect(grace.report(.conflict, at: 100) == nil, "a conflict at takeover is held")
+    try expect(grace.report(.conflict, at: 101) == nil, "it stays held during the grace")
+    try expect(
+      grace.report(.active, at: 101.5) == .active,
+      "the state the handover settles on is reported"
+    )
+  }
+
+  static func aConflictAfterTheHandoverIsReportedImmediately() throws {
+    var grace = HandoverGrace(duration: 2.5)
+    grace.beginTerm(at: 100)
+
+    try expect(
+      grace.report(.conflict, at: 102.5) == .conflict,
+      "a conflict that outlasts the handover is reported"
+    )
+    try expect(
+      grace.report(.conflict, at: 500) == .conflict,
+      "a conflict later in the term is reported on its first sighting"
+    )
+  }
+
+  static func switchingApplicationsCannotHideAConflict() throws {
+    var grace = HandoverGrace(duration: 2.5)
+    grace.beginTerm(at: 100)
+
+    for second in stride(from: 103.0, to: 110, by: 1) {
+      try expect(grace.report(.inactive, at: second) == .inactive, "other states pass through")
+      try expect(
+        grace.report(.conflict, at: second + 0.5) == .conflict,
+        "each return to Brave reports the conflict"
+      )
+    }
+  }
+
+  static func eachLeadershipTermHasItsOwnGrace() throws {
+    var grace = HandoverGrace(duration: 2.5)
+    grace.beginTerm(at: 100)
+    grace.endTerm()
+
+    try expect(
+      grace.report(.conflict, at: 101) == .conflict,
+      "outside a leadership term nothing is held"
+    )
+    grace.beginTerm(at: 500)
+    try expect(grace.report(.conflict, at: 501) == nil, "a new term starts a new grace")
   }
 
   /// Returns false when this environment cannot register the hotkey at all.

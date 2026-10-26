@@ -14,8 +14,8 @@ final class HostRuntime: @unchecked Sendable {
 
   private var isLeader = false
   private var forwardedState: HotKeyState?
-  private var lastState = HotKeyState.inactive
   private var leadershipTicks = 0
+  private var status = LeaderStatusReporter()
   private var workspaceObserver: NSObjectProtocol?
   private var timer: Timer?
 
@@ -64,8 +64,8 @@ final class HostRuntime: @unchecked Sendable {
         ], to: sink)
     }
     bus.onStatusRequest { [weak self] in
-      guard let self, self.isLeader else { return }
-      self.bus.broadcastStatus(self.lastState)
+      guard let self, self.isLeader, let state = self.status.statusForRequest else { return }
+      self.bus.broadcastStatus(state)
     }
 
     try sink.send([
@@ -79,7 +79,7 @@ final class HostRuntime: @unchecked Sendable {
       object: nil,
       queue: .main
     ) { [weak self] _ in
-      self?.refreshHotKey(forceBroadcast: false)
+      self?.refreshHotKey()
     }
 
     timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) {
@@ -93,14 +93,23 @@ final class HostRuntime: @unchecked Sendable {
     let wasLeader = isLeader
     isLeader = election.tryAcquire()
     if isLeader {
+      if !wasLeader {
+        // Having heard a state means another host led before and may still hold the hotkey.
+        status.beginTerm(
+          at: ProcessInfo.processInfo.systemUptime,
+          afterPreviousLeader: forwardedState != nil
+        )
+      }
       // A periodic repeat lets hosts that missed a notification converge.
       leadershipTicks = wasLeader ? (leadershipTicks + 1) % Self.heartbeatTicks : 0
-      refreshHotKey(forceBroadcast: leadershipTicks == 0)
+      if leadershipTicks == 0 { status.requestBroadcast() }
+      refreshHotKey()
       return
     }
     if wasLeader {
       // The lock file was replaced; the new leader announces the hotkey state.
       controller.deactivate()
+      status.endTerm()
     }
     // Older leaders broadcast only changes, so ask until the first state arrives.
     if forwardedState == nil {
@@ -108,12 +117,12 @@ final class HostRuntime: @unchecked Sendable {
     }
   }
 
-  private func refreshHotKey(forceBroadcast: Bool) {
+  private func refreshHotKey() {
     guard isLeader else { return }
     let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-    let state = controller.update(frontmostBundleID: bundleID)
-    if forceBroadcast || state != lastState {
-      lastState = state
+    // A conflict held during a handover is retried on the next timer tick.
+    let reading = controller.update(frontmostBundleID: bundleID)
+    if let state = status.observe(reading, at: ProcessInfo.processInfo.systemUptime) {
       bus.broadcastStatus(state)
     }
   }
