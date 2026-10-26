@@ -10,7 +10,8 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ### Changed
 
-- Extension packaging includes only files tracked by git, stops when an extension directory contains untracked files, and requires a git checkout.
+- Extension packaging includes only files tracked by git, stops when an extension directory contains untracked or ignored files (other than operating-system and editor droppings), and requires a git checkout.
+- Manifest-referenced files are defined once and accept every Manifest V3 icon form; references outside the extension are rejected.
 
 ## [0.2.2] - 2026-10-25
 

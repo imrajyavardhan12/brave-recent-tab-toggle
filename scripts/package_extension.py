@@ -12,6 +12,12 @@ from pathlib import Path
 
 ARCHIVE_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 INCLUDED_DIRECTORIES = ("icons", "popup", "src")
+# Operating-system and editor droppings that may sit beside shipped files. Any other file
+# git does not track under a shipped directory could be one the extension needs.
+JUNK_NAMES = {".DS_Store", "Thumbs.db", "desktop.ini", "4913"}
+JUNK_PREFIXES = ("._", ".#")
+JUNK_SUFFIXES = (".swp", ".swo", ".swn", ".swx", ".pyc", "~")
+JUNK_DIRECTORIES = {"__pycache__", ".vscode", ".idea"}
 
 
 def package(project_root):
@@ -25,12 +31,7 @@ def package(project_root):
 
     files = [extension_root / "manifest.json", project_root / "LICENSE"]
     files.extend(_tracked_files(project_root, INCLUDED_DIRECTORIES))
-    referenced = [
-        manifest["background"]["service_worker"],
-        manifest["action"]["default_popup"],
-        *manifest["icons"].values(),
-        *manifest["action"]["default_icon"].values(),
-    ]
+    referenced = _manifest_references(project_root)
     packaged = {os.path.normpath(path) for path in files}
     absent = [
         path
@@ -68,18 +69,25 @@ def package(project_root):
 
 
 def _tracked_files(project_root, directories):
-    # Shipping only tracked files keeps ignored files such as .DS_Store out of the archive,
-    # so a clean checkout of a commit packages identically on every machine (working-tree
-    # edits to tracked files still ship). An untracked file that is not ignored is
-    # probably a forgotten `git add`, so it stops packaging instead of silently missing.
+    # Shipping only tracked files keeps droppings such as .DS_Store out of the archive, so a
+    # clean checkout of a commit packages identically on every machine (working-tree edits
+    # to tracked files still ship). Any other file git does not track, ignored or not, is
+    # probably one the extension needs, so it stops packaging instead of silently missing.
     pathspecs = ["--"] + [f"extension/{directory}" for directory in directories]
     # Unmerged files are listed once per conflict stage and may hold conflict markers.
     if _git(project_root, "--unmerged", *pathspecs):
         raise SystemExit("resolve merge conflicts in the extension before packaging")
-    untracked = _git(project_root, "--others", "--exclude-standard", *pathspecs)
+    # Without --exclude-standard, ignore rules (including a contributor's global excludes)
+    # cannot hide a file from this check.
+    untracked = [
+        name
+        for name in _git(project_root, "--others", *pathspecs)
+        if not _is_junk(name)
+    ]
     if untracked:
         raise SystemExit(
-            "untracked extension files would not be packaged; add or remove them:\n  "
+            "extension files git does not track would not be packaged; add them "
+            "(with `git add -f` if ignored) or remove them:\n  "
             + "\n  ".join(untracked)
         )
     files = [project_root / name for name in _git(project_root, *pathspecs)]
@@ -94,6 +102,49 @@ def _tracked_files(project_root, directories):
     return files
 
 
+def _is_junk(name):
+    *directories, basename = name.split("/")
+    if JUNK_DIRECTORIES.intersection(directories):
+        return True
+    emacs_autosave = (
+        len(basename) > 1 and basename.startswith("#") and basename.endswith("#")
+    )
+    return (
+        basename in JUNK_NAMES
+        or basename.startswith(JUNK_PREFIXES)
+        or basename.endswith(JUNK_SUFFIXES)
+        or emacs_autosave
+    )
+
+
+def _manifest_references(project_root):
+    # manifest-references.mjs owns the one definition of the files manifest.json names.
+    try:
+        listing = subprocess.run(
+            [
+                "node",
+                str(project_root / "scripts/manifest-references.mjs"),
+                str(project_root / "extension/manifest.json"),
+            ],
+            capture_output=True,
+            check=True,
+        ).stdout
+    except OSError as error:
+        raise SystemExit(f"packaging requires Node.js: {error}") from error
+    except subprocess.CalledProcessError as error:
+        raise SystemExit(f"manifest.json is invalid: {_reason(error)}") from error
+    references = [path for path in listing.decode().splitlines() if path]
+    # An empty listing means the command printed nothing, never a manifest without files.
+    if not references:
+        raise SystemExit("manifest-references.mjs listed no files for manifest.json")
+    return references
+
+
+def _reason(error):
+    stderr = error.stderr.decode(errors="replace").strip()
+    return stderr or f"exited with status {error.returncode}"
+
+
 def _git(project_root, *arguments):
     try:
         listing = subprocess.run(
@@ -104,9 +155,16 @@ def _git(project_root, *arguments):
     except OSError as error:
         raise SystemExit(f"packaging requires git: {error}") from error
     except subprocess.CalledProcessError as error:
-        reason = error.stderr.decode(errors="replace").strip()
-        raise SystemExit(f"cannot list the extension's git files: {reason}") from error
-    return [name for name in listing.decode().split("\0") if name]
+        raise SystemExit(
+            f"cannot list the extension's git files: {_reason(error)}"
+        ) from error
+    try:
+        return [name.decode() for name in listing.split(b"\0") if name]
+    except UnicodeDecodeError as error:
+        # Zip archives store UTF-8 names, so such a file could not be packaged anyway.
+        raise SystemExit(
+            f"extension file names must be valid UTF-8: {error}"
+        ) from error
 
 
 def main():

@@ -7,12 +7,13 @@
     "build:native": "swift build --package-path native",
     "check:extension": "node scripts/validate-extension.mjs",
     "test:extension": "node --test extension/test/*.test.js",
+    "test:scripts": "node --test scripts/*.test.mjs",
     "test:native": "scripts/test-native.sh",
     "test:architectures": "scripts/test-architectures.sh",
     "test:install": "scripts/test-install.sh",
     "test:doctor": "scripts/test-doctor.sh",
     "test:package": "scripts/test-package.sh",
-    "test": "npm run check:extension && npm run test:extension && npm run test:native && npm run test:architectures && npm run test:install && npm run test:doctor && npm run test:package"
+    "test": "npm run check:extension && npm run test:extension && npm run test:scripts && npm run test:native && npm run test:architectures && npm run test:install && npm run test:doctor && npm run test:package"
   },
   "engines": {
     "node": ">=20"
