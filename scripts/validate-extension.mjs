@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -34,14 +34,19 @@ for (const path of requiredFiles) {
   assert.ok(existsSync(resolve(extension, path)), `missing extension file: ${path}`);
 }
 
-for (const path of [
-  "src/background.js",
-  "src/native-host-connection.js",
-  "src/service-worker.js",
-  "src/tab-toggle.js",
-  "popup/popup.js",
-  "popup/popup-view.js",
-]) {
+// Walk by hand: readdirSync's recursive option needs Node 20.1, and engines allows 20.0.
+function scriptsIn(directory) {
+  return readdirSync(resolve(extension, directory), { withFileTypes: true }).flatMap(
+    (entry) => {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) return scriptsIn(path);
+      return /\.m?js$/.test(entry.name) ? [path] : [];
+    },
+  );
+}
+
+// Check every script in the shipped directories, so a new module cannot skip validation.
+for (const path of ["src", "popup"].flatMap(scriptsIn)) {
   execFileSync(process.execPath, ["--check", resolve(extension, path)]);
 }
 

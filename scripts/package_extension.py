@@ -4,7 +4,9 @@
 import argparse
 import hashlib
 import json
+import os
 import stat
+import subprocess
 import zipfile
 from pathlib import Path
 
@@ -22,9 +24,23 @@ def package(project_root):
     )
 
     files = [extension_root / "manifest.json", project_root / "LICENSE"]
-    for directory in INCLUDED_DIRECTORIES:
-        files.extend(
-            path for path in (extension_root / directory).rglob("*") if path.is_file()
+    files.extend(_tracked_files(project_root, INCLUDED_DIRECTORIES))
+    referenced = [
+        manifest["background"]["service_worker"],
+        manifest["action"]["default_popup"],
+        *manifest["icons"].values(),
+        *manifest["action"]["default_icon"].values(),
+    ]
+    packaged = {os.path.normpath(path) for path in files}
+    absent = [
+        path
+        for path in referenced
+        if os.path.normpath(extension_root / path) not in packaged
+    ]
+    if absent:
+        raise SystemExit(
+            "files referenced by manifest.json would not be packaged:\n  "
+            + "\n  ".join(absent)
         )
 
     with zipfile.ZipFile(
@@ -49,6 +65,48 @@ def package(project_root):
     checksum.write_text(f"{digest}  {archive.name}\n")
     print(archive)
     print(checksum)
+
+
+def _tracked_files(project_root, directories):
+    # Shipping only tracked files keeps ignored files such as .DS_Store out of the archive,
+    # so a clean checkout of a commit packages identically on every machine (working-tree
+    # edits to tracked files still ship). An untracked file that is not ignored is
+    # probably a forgotten `git add`, so it stops packaging instead of silently missing.
+    pathspecs = ["--"] + [f"extension/{directory}" for directory in directories]
+    # Unmerged files are listed once per conflict stage and may hold conflict markers.
+    if _git(project_root, "--unmerged", *pathspecs):
+        raise SystemExit("resolve merge conflicts in the extension before packaging")
+    untracked = _git(project_root, "--others", "--exclude-standard", *pathspecs)
+    if untracked:
+        raise SystemExit(
+            "untracked extension files would not be packaged; add or remove them:\n  "
+            + "\n  ".join(untracked)
+        )
+    files = [project_root / name for name in _git(project_root, *pathspecs)]
+    missing = [
+        str(path.relative_to(project_root)) for path in files if not path.is_file()
+    ]
+    if missing:
+        raise SystemExit(
+            "tracked extension files are missing from the working tree:\n  "
+            + "\n  ".join(missing)
+        )
+    return files
+
+
+def _git(project_root, *arguments):
+    try:
+        listing = subprocess.run(
+            ["git", "-C", str(project_root), "ls-files", "-z", *arguments],
+            capture_output=True,
+            check=True,
+        ).stdout
+    except OSError as error:
+        raise SystemExit(f"packaging requires git: {error}") from error
+    except subprocess.CalledProcessError as error:
+        reason = error.stderr.decode(errors="replace").strip()
+        raise SystemExit(f"cannot list the extension's git files: {reason}") from error
+    return [name for name in listing.decode().split("\0") if name]
 
 
 def main():

@@ -4,6 +4,14 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+### Fixed
+
+- Rank a tab that lacks Chromium activation metadata as least recently active instead of letting it disrupt Previous Tab selection.
+
+### Changed
+
+- Extension packaging includes only files tracked by git, stops when an extension directory contains untracked files, and requires a git checkout.
+
 ## [0.2.2] - 2026-10-25
 
 ### Fixed

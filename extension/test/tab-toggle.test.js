@@ -58,6 +58,20 @@ test("a closed previous tab exposes the next existing recent tab", async () => {
   assert.deepEqual(result, { status: "toggled", tabId: 10 });
 });
 
+test("a tab without activation metadata ranks as least recently active", async () => {
+  const browser = browserWith({
+    tabs: [
+      { id: 10, active: false },
+      { id: 11, active: false, lastAccessed: 300 },
+      { id: 12, active: true, lastAccessed: 400 },
+    ],
+  });
+
+  const result = await toggleRecentTab(browser);
+
+  assert.deepEqual(result, { status: "toggled", tabId: 11 });
+});
+
 test("repeated tab toggles alternate between the same two tabs", async () => {
   const browser = browserWith({
     tabs: [
