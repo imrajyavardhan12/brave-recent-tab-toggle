@@ -4,6 +4,8 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-10-26
+
 ### Fixed
 
 - Rank a tab that lacks Chromium activation metadata as least recently active instead of letting it disrupt Previous Tab selection.
